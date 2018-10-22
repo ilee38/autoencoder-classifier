@@ -10,21 +10,36 @@
 import numpy, os, array, sys
 from PIL import Image
 
-filename = sys.argv[1]
-imgFile = filename + '.png'
+DATASET_FOLDER = './function_bins/'
+#Number of "y" labels or function binaries
+NUM_OF_LABELS = 30
 
-f = open(filename, 'rb')
-#length of file in bites
-ln = os.path.getsize(filename)
-WIDTH = 256
-rem = ln % WIDTH
 
-#unint8 array
-a = array.array("B")
-a.fromfile(f, ln - rem)
-f.close()
+def toImage(filename, imgFile):
+    f = open(filename, 'rb')
+    #length of file in bites
+    ln = os.path.getsize(filename)
+    WIDTH = 256
+    rem = ln % WIDTH 
+    #unint8 array
+    a = array.array("B")
+    a.fromfile(f, ln - rem)
+    f.close()
+    g = numpy.reshape(a, (len(a) / WIDTH, WIDTH))
+    g = numpy.uint8(g)
+    img = Image.fromarray(g)
+    img.save(imgFile)
 
-g = numpy.reshape(a, (len(a) / WIDTH, WIDTH))
-g = numpy.uint8(g)
-img = Image.fromarray(g)
-img.save(imgFile)
+label_list = os.listdir(DATASET_FOLDER)
+#change to the dataset's folder
+os.chdir(DATASET_FOLDER)
+for i in range(len(label_list)):
+        os.chdir(label_list[i])
+        filename = os.listdir(os.getcwd())[0]
+        directory = os.getcwd() + '/'
+        filepath = directory + filename
+        imgFile = filename + '.png'
+        toImage(filepath, imgFile)
+        print imgFile + ' created'
+        os.chdir('..')
+
