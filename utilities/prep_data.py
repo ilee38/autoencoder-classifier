@@ -10,9 +10,10 @@
 #
 #  Filename               Description                       Array shape
 # ---------------------  --------------------------------  ------------
-#  noisy_imgs_train.npy  dataset of noisy binary images    (11020, 28, 28, 1)
+#  orig_train_imgs.npy   original training images          (11020, 28, 28, 1)
+#  noisy_imgs_train.npy  array of noisy binary images      (11020, 28, 28, 1)
 #  train_labels.npy      labels vector for all samples     (11020,)
-#  benign_imgs.npy       original benig binary images      (29, 28, 28, 1)
+#  benign_imgs.npy       original benign binary images     (29, 28, 28, 1)
 #
 # the training set can be partitioned to get a training and test sets
 #
@@ -84,6 +85,8 @@ noise_factor = 0.2
 X_noisy_img = X_train_samples + noise_factor * np.random.normal(loc=0.0, scale=1.0, size = X_train_samples.shape)
 X_noisy_img = np.clip(X_noisy_img, 0., 1.)
 
+print 'train samples shape: '
+print X_train_samples.shape
 print 'train  noisy samples shape: '
 print X_noisy_img.shape
 print 'train labels shape: '
@@ -93,6 +96,7 @@ print Y_train_labels.shape
 # note: use np.load() to load the data when needed
 os.chdir(TRAIN_DATA_FOLDER)
 np.save('noisy_imgs_train.npy', X_noisy_img)
+np.save('orig_train_imgs.npy', X_train_samples)
 np.save('train_labels.npy', Y_train_labels)
 np.save('benign_imgs.npy', X_benign_img)
 
