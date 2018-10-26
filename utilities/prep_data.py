@@ -37,7 +37,7 @@ X_benign_img = np.zeros((NUMBER_OF_LABELS, 28, 28))
 X_train_samples = np.zeros((DATASET_LABELS, 28, 28))
 # Array of labels, dtype="S15" means a string of 15 chars. numpy only accepts
 # fixed-length str's as dtype
-Y_train_labels = np.empty((DATASET_LABELS), dtype="S15")
+Y_train_labels = np.empty((DATASET_LABELS, 1), dtype="S15")
 
 # List of dataset's subdirectories, each subdir is a binary file
 # function (e.g. a label of our data set)
@@ -63,15 +63,16 @@ os.chdir('..')
 # then we will add artificial noise to these copies
 #
 cnt = 0
-for j in range(len(label_list)):
-  for k in range(SAMPLES_PER_BINARY):
+for k in range(SAMPLES_PER_BINARY):
+  for j in range(len(label_list)):
     X_train_samples[cnt] = X_benign_img[j]
     Y_train_labels[cnt] = label_list[j]
     cnt += 1
 
+
 ##
-# The benign images are now in array X_benign_img[]
-# And the training samples in X_train_samples[]
+# The benign images are now in array X_benign_img[] (29,28,28)
+# And the training samples in X_train_samples[] (11020, 28, 28)
 # Now, generate noisy images by adding gaussian noise
 # to the training samples array
 ##
@@ -85,12 +86,9 @@ noise_factor = 0.2
 X_noisy_img = X_train_samples + noise_factor * np.random.normal(loc=0.0, scale=1.0, size = X_train_samples.shape)
 X_noisy_img = np.clip(X_noisy_img, 0., 1.)
 
-print 'train samples shape: '
-print X_train_samples.shape
-print 'train  noisy samples shape: '
-print X_noisy_img.shape
-print 'train labels shape: '
-print Y_train_labels.shape
+print 'train samples shape: ' + str(X_train_samples.shape)
+print 'train  noisy samples shape: ' + str(X_noisy_img.shape)
+print 'train labels shape: ' + str(Y_train_labels.shape)
 
 # Save the all the data in numpy arrays
 # note: use np.load() to load the data when needed
@@ -100,12 +98,12 @@ np.save('orig_train_imgs.npy', X_train_samples)
 np.save('train_labels.npy', Y_train_labels)
 np.save('benign_imgs.npy', X_benign_img)
 
-# The following code was only used for testing the outputs
+### The following code was only used for testing ###
 
 #index = 0
-#for l in range(NUMBER_OF_LABELS):
+#for l in range(DATASET_LABELS):
 #  print Y_train_labels[index]
-#  index += 380
+#  index += 1
 
 # Plot noisy images
 #n = 10
