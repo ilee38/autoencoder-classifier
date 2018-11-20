@@ -1,19 +1,17 @@
 #!/usr/bin/python
 
 ##
-# Script to prepare the images to insert artificial "noise",
+# Script to generate images with data augmentation in keras,
 # thus simulating the effects of corrupted functions by the
 # rootkit implementation.
+# Note: data augmentation should only be done with test samples
 #
 # At the end of the process, three numpy arrays are generated (.npy files),
 # which contain the dataset for training:
 #
-#  Filename               Description                       Array shape
-# ---------------------  --------------------------------  ------------
-#  orig_train_imgs.npy   original training images          (11020, IMG_DIMENSION, IMG_DIMENSION, 1)
-#  noisy_imgs_train.npy  array of noisy binary images      (11020, IMG_DIMENSION, IMG_DIMENSION, 1)
-#  train_labels.npy      labels vector for all samples     (11020,)
-#  benign_imgs.npy       original benign binary images     (29, IMG_DIMENSION, IMG_DIMENSION, 1)
+#  Filename                   Description                   Array shape
+# ---------------------     ----------------------------   ------------
+# aug_clean_imgs_train.npy   augmented training images     (11020, IMG_DIMENSION, IMG_DIMENSION, 1)
 #
 # the training set can be partitioned to get a training and test sets
 #
@@ -25,6 +23,8 @@ import os, glob
 import numpy as np
 from PIL import Image
 from matplotlib import pyplot as plt
+import keras
+from keras.preprocessing.image import ImageDataGenerator
 
 DATASET_FOLDER = './function_bins/'
 TRAIN_DATA_FOLDER = './train_set'
@@ -36,6 +36,7 @@ IMG_DIMENSION = 32  #image's width and height dimensions
 # Array containig the sample images
 X_benign_img = np.zeros((NUMBER_OF_LABELS, IMG_DIMENSION, IMG_DIMENSION))
 X_train_samples = np.zeros((DATASET_LABELS, IMG_DIMENSION, IMG_DIMENSION))
+X_train_aug_clean = np.zeros((IMG_DIMENSION, IMG_DIMENSION, 1))
 # Array of labels, dtype="S15" means a string of 15 chars. numpy only accepts
 # fixed-length str's as dtype
 Y_train_labels = np.empty((DATASET_LABELS, 1), dtype="S15")
@@ -61,7 +62,7 @@ os.chdir('..')
 
 #
 # Create "training samples". First make copies of the benign images,
-# then we will add artificial noise to these copies
+# then we will augment these copies
 #
 cnt = 0
 for k in range(SAMPLES_PER_BINARY):
@@ -74,50 +75,48 @@ for k in range(SAMPLES_PER_BINARY):
 ##
 # The benign images are now in array X_benign_img[] (29,IMG_DIMENSION,IMG_DIMENSION)
 # And the training samples in X_train_samples[] (11020, IMG_DIMENSION, IMG_DIMENSION)
-# Now, generate noisy images by adding gaussian noise
-# to the training samples array
 ##
 
 # Normalize values and convert to IMG_DIMENSIONxIMG_DIMENSIONx1
 X_train_samples = X_train_samples.astype('float32') / 255.
 X_train_samples = np.reshape(X_train_samples, (len(X_train_samples), IMG_DIMENSION, IMG_DIMENSION, 1))
 
+X_train_aug_clean = X_train_samples
 
-##### For testing only
-#X_benign_img = X_benign_img.astype('float32') / 255.
-#X_benign_img = np.reshape(X_benign_img, (len(X_benign_img), 28, 28, 1))
-#####
+# Create object for data ugmentation in keras
+datagen = ImageDataGenerator(
+      rotation_range=40,
+      width_shift_range=0.2,
+      height_shift_range=0.2,
+      shear_range=0.2,
+      zoom_range=0.2,
+      horizontal_flip=True,
+      fill_mode='nearest')
 
-# Add synthetic noise: apply a gaussian noise matrix and clip the images between 0 an 1
-noise_factor = 0.1
-X_noisy_img = X_train_samples + noise_factor * np.random.normal(loc=0.0, scale=1.0, size = X_train_samples.shape)
-X_noisy_img = np.clip(X_noisy_img, 0., 1.)
+for img in range(len(X_train_aug_clean)):
+  X_train_aug_clean[img] = datagen.random_transform(X_train_aug_clean[img])
 
-print 'train samples shape: ' + str(X_train_samples.shape)
-print 'train  noisy samples shape: ' + str(X_noisy_img.shape)
-print 'train labels shape: ' + str(Y_train_labels.shape)
+print 'augmented samples shape: ' + str(X_train_aug_clean.shape)
+print 'augmented labels shape: ' + str(Y_train_labels.shape)
 
 # Save the all the data in numpy arrays
 # note: use np.load() to load the data when needed
 os.chdir(TRAIN_DATA_FOLDER)
-np.save('noisy_imgs_train.npy', X_noisy_img)
-np.save('orig_train_imgs.npy', X_train_samples)
-np.save('train_labels.npy', Y_train_labels)
-np.save('benign_imgs.npy', X_benign_img)
+np.save('aug_clean_imgs_train.npy', X_train_aug_clean)
+np.save('aug_train_labels.npy', Y_train_labels)
 
-### The following code was only used for testing ###
 """
-index = 0
-for l in range(DATASET_LABELS):
-  print Y_train_labels[index]
-  index += 1
+### The following code was only used for testing ###
+for l in range(35):
+  print Y_train_labels[l]
+
 
 #Plot noisy images
-n = 10
+n = 35
 plt.figure(figsize=(20, 2))
 for i in range(n):
     ax = plt.subplot(1, n, i)
-    plt.imshow(X_noisy_img[i].reshape(IMG_DIMENSION, IMG_DIMENSION))
+    plt.imshow(X_train_aug_clean[i].reshape(IMG_DIMENSION, IMG_DIMENSION))
     plt.gray()
     plt.title(Y_train_labels[i])
     ax.get_xaxis().set_visible(False)

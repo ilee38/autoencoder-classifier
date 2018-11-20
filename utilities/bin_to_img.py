@@ -9,7 +9,7 @@
 import numpy, os, array, sys
 from PIL import Image
 
-DATASET_FOLDER = './function_bins/'
+DATASET_FOLDER = '../real_bins/'
 
 def toImage(filename, imgFile):
     f = open(filename, 'rb')
@@ -30,7 +30,7 @@ def toImage(filename, imgFile):
 #function (e.g. a label of our data set)
 label_list = os.listdir(DATASET_FOLDER)
 #change to the dataset's folder
-os.chdir('..')
+#os.chdir('..')
 os.chdir(DATASET_FOLDER)
 for i in range(len(label_list)):
         #enter directory containing the binary file
