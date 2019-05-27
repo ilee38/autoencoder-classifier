@@ -1,2 +1,95 @@
-# autoencoder-classifier
-Using a Denoising Autoencoder (a neural network model) for classifying corrupted images.
+# Using Autoencoders to Identify Kernel-Level Rootkit Exploits to System Calls in Linux
+
+Graduate project completed during the last semester of my Master's degree. The full report is [here](https://github.com/ilee38/autoencoder-recovery/blob/master/Final-Report.pdf)
+
+
+## Introduction
+
+A kernel level rootkit is a type of malware that exploits a computer system by manipulating important kernel data structures and functions, allowing an attacker to potentially gain full control. Given the elevated capabilities of a rootkit, it is a challenging task to detect and remove once a system is compromised. Inspired by the human auto-immune system, a deep learning model is proposed to provide a computer system with the intelligence to automatically recognize and aid in the recovery from this type of exploits. This is achieved by leveraging existing technologies in a novel approach. Using autoencoders  and a binary file visualization technique, the proposed model is able to look at a malicious or corrupted binary, and then select its appropriate benign counterpart to indicate a suitable recovery. This method may also be used for other types of malware besides rootkits, due to the flexibility offered by the visualization technique.
+
+
+## Implementation Details
+
+Please refer to the full report on the link above for more details about Autoencoders and gray-scale image visualization of binary files.
+
+High-level view of a Convolutional Denoising Autoencoder:
+
+![Image of Denoising Autoencoder]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/dae.png)
+
+Deep Learning model block diagram for this project:
+
+![Block diagram of Convolutional Denoising Autoencoder]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/model-block.png)
+
+### Dataset
+Due to the limited availability of data samples, the dataset was created using image data augmentation. A set of 29 Linux system function binaries were selected. The binaries were collected from a system running Ubuntu server 16.04LTS.
+This selection was somewhat arbitrary, but depending on the application, certain system calls will be more important than others from a security perspective.
+After selecting the binaries, 380 copies per binary were created giving a total of 11020 binaries. A corrupted copy of each binary was then created. The final dataset is comprised of 11020 clean samples and 11020 corresponding corrupted samples. Also, label vectors were created using one-hot encoding for the 29 categories (i.e. system function names). Labels were only used for the classification task.
+
+The image below shows an example of the binaries corresponding to the benign *read()* system call and the version implemented by the rootkit known as Rial. The binary files have been converted to gray-scale images.
+
+![Image of gray-scale binary files]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/read-malware.png)
+
+### Data Preprocessing
+The binaries were first transformed into gray-scale images, with the malicious binary treated as the corrupted pair of the normal uncorrupted one. Two different methods were used to create the corrupted samples. The first approach was to introduce random Gaussian noise to the images.
+
+![Images with added Gaussian noise]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/gaussian-imgs.png)
+
+The second approach was to use random transformations, including image rotations, flips, etc.
+These two approaches were evaluated separately by using each dataset to train the model separately.
+
+![Images with random transformations]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/trans-imgs.png)
+
+### Experimental Results
+The deep learning models described above were implemented in Keras and trained in a Google Cloud Platform (GCP) VM instance with 8 vCPUs.
+
+The first training and testing round was performed using the images augmented with Gaussian noise, with the following results:
+The Convolutional Denoising Autoencoder (DAE) showed a validation loss of 0.0005 after 50 epochs, with the validation curve closely following the training curve. This indicates that the model was not overfitting.
+
+![Image of training and validation curves]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/gauss-dae-val-curve.png)
+
+Next, the classifier was trained with the reconstructed images and then tested with the test dataset. Validation accuracy of the classifier reached 0.8970 after 50 training epochs. This metric indicates that in 89.7% of the cases a corrupted binary image was correctly classified or correlated to its benign counterpart. The validation curve also follows closely the training curve, indicating no overfitting. However, the accuracy appears to flatten after the first 10 epochs.
+
+![Image of training and validation curves]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/gauss-class-val-curve.png)
+
+Images generated by the Convolutional Denoising Autoencoder model (before feeding to the classifier):
+
+![Images of binaries during experiments]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/gauss-sample-rec.png)
+
+
+The next round of training and testing was performed using the dataset with the randomly transformed images:
+Validation loss for the convolutional DAE reached 0.0020 after 50 training epochs, with no overfitting.
+
+![Image of training and validation curves]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/trans-dae-val-curve.png)
+
+Finally, the classifier was trained using the reconstructed images. The validation accuracy reached 0.8745 after 50 epochs, showing the same behavior as in the previous results. Again, this metric indicates that in 87.45% of the cases a corrupted binary image was correctly classified or correlated to its benign counterpart. The curves indicate no overfitting, but the accuracy appears to flatten after the first 10 epochs.
+
+![Image of training and validation curves]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/trans-class-val-curve.png)
+
+Images generated by the Convolutional Denoising Autoencoder model (before feeding to the classifier):
+
+![Images of binaries during experiments]
+(https://github.com/ilee38/autoencoder-recovery/blob/master/pics/trans-sample-rec.png)
+
+In general, when using the noisy image dataset, the classifier showed a slightly better accuracy of 89.7%. Also, the convolutional DAE seems to do a better reconstruction of the noisy images.
+
+
+## Limitations and Future Work
+
+The biggest limitation of this project was the lack of an appropriate dataset. The data augmentation techniques used to construct the dataset may only provide a limited representation of “real world” data.
+The experiment results showed that the classifier accuracy in both instances reached a limit just below 90% after only a few epochs and showed no overfitting. As part of future work, the accuracy of the classifier will be improved by trying additional model optimizations, such as hyperparameter tuning and increasing model’s capacity.
+
+
+## Conclusions
+
+A deep learning model to identify kernel-level rootkit exploits to system call functions was introduced. Using a stacked convolutional denoising autoencoder and a densely connected classifier, the model is able to recognize and select the appropriate benign system call function by looking at a corrupted version of that function. The final accuracy of the model was close to 90% with a validation accuracy of 89.7%.
+Lastly, the model presented in this work can be trained to be used with other types of malware. The visualization of binary files as gray-scale images offers this flexibility. This work presents a novel approach that combines existing techniques and applies them to the area of cyber-security.
